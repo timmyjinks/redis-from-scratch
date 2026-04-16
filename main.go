@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"net"
 )
@@ -31,15 +31,24 @@ func main() {
 
 func Read(conn net.Conn) {
 	for {
-		buf := make([]byte, 1024)
-		_, err := conn.Read(buf)
+		buf := bufio.NewReader(conn)
+		r := NewReader(buf)
+
+		b, err := buf.Peek(12)
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			log.Fatal(err.Error())
+			log.Println(err)
+			return
+		}
+		fmt.Println(string(b))
+
+		val, err := r.Read()
+		if err != nil {
+			log.Println(err)
+			return
 		}
 
-		conn.Write([]byte("+PONG\r\n"))
+		fmt.Println(val)
+
+		conn.Write(fmt.Appendf([]byte(val.str), "+%s", val.str))
 	}
 }
