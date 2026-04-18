@@ -44,15 +44,11 @@ func Read(conn net.Conn) {
 		command := strings.ToUpper(val.array[0].bulk)
 		args := val.array[1:]
 
-		fmt.Println(command)
-		fmt.Println(args)
-
 		action := Handlers[command]
 
 		v := action(args)
 
-		res := v.Marshal()
-
-		conn.Write(res)
+		writer := NewWriter(conn)
+		writer.Write(v)
 	}
 }
