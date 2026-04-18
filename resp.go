@@ -54,7 +54,7 @@ func (r *Resp) Read() (Value, error) {
 
 func (r *Resp) readBulk() (Value, error) {
 	v := Value{}
-	v.typ = "array"
+	v.typ = "bulk"
 
 	size, err := r.readInteger()
 	if err != nil {
@@ -129,6 +129,57 @@ func (r *Resp) readArray() (Value, error) {
 	return val, nil
 }
 
+func (v Value) Marshal() []byte {
+	switch v.typ {
+	case "array":
+		return v.marshalArray()
+	case "bulk":
+		return v.marshalBulk()
+	case "string":
+		return v.marshalString()
+	case "error":
+		return v.marshalError()
+	default:
+		return []byte{}
+	}
+}
+
+func (v Value) marshalArray() []byte {
+	var bytes = []byte{}
+	bytes = append(bytes, ARRAY)
+	bytes = append(bytes, []byte(strconv.Itoa(len(v.array)))...)
+	bytes = append(bytes, '\r', '\n')
+
+	for i := range len(v.array) {
+		fmt.Println("bulkkk", v.array[i])
+		bytes = append(bytes, v.array[i].Marshal()...)
+	}
+	return bytes
+}
+func (v Value) marshalBulk() []byte {
+	var bytes = []byte{}
+	bytes = append(bytes, BULK)
+	bytes = append(bytes, []byte(strconv.Itoa(len(v.bulk)))...)
+	bytes = append(bytes, '\r', '\n')
+	bytes = append(bytes, v.bulk...)
+	bytes = append(bytes, '\r', '\n')
+	return bytes
+}
+func (v Value) marshalString() []byte {
+	var bytes = []byte{}
+	bytes = append(bytes, STRING)
+	bytes = append(bytes, v.str...)
+	bytes = append(bytes, '\r', '\n')
+	return bytes
+}
+func (v Value) marshalError() []byte {
+	var bytes = []byte{}
+	bytes = append(bytes, PANIC)
+	bytes = append(bytes, v.str...)
+	bytes = append(bytes, '\r', '\n')
+	return bytes
+}
+
 func set(args []Value) Value {
 	if len(args) == 0 {
 		return Value{typ: "error", str: "PANIC YOU ARE GOING TO DIE"}
@@ -142,4 +193,31 @@ func set(args []Value) Value {
 	DataMutex.Unlock()
 
 	return Value{typ: "string", str: "OK"}
+}
+
+func get(args []Value) Value {
+	if len(args) == 0 {
+		return Value{typ: "error", str: "PANIC YOU ARE GOING TO DIE"}
+	}
+
+	key := args[0].bulk
+
+	DataMutex.Lock()
+	val, ok := Data[key]
+	DataMutex.Unlock()
+	if !ok {
+		return Value{typ: "error", str: "value DNE"}
+	}
+
+	return Value{typ: "string", str: val}
+}
+
+func ping(args []Value) Value {
+	if len(args) == 0 {
+		return Value{typ: "string", str: "PONG"}
+	}
+
+	val := args[0].bulk
+
+	return Value{typ: "string", str: val}
 }

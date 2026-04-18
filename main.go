@@ -41,20 +41,18 @@ func Read(conn net.Conn) {
 			return
 		}
 
-		if val.typ != "array" {
-			return
-		}
-
 		command := strings.ToUpper(val.array[0].bulk)
 		args := val.array[1:]
 
 		fmt.Println(command)
 		fmt.Println(args)
 
-		if command == "SET" {
-			v := set(args)
-			conn.Write([]byte("+" + v.str + "\r\n"))
-		}
+		action := Handlers[command]
 
+		v := action(args)
+
+		res := v.Marshal()
+
+		conn.Write(res)
 	}
 }
