@@ -4,16 +4,19 @@ import (
 	"bufio"
 	"fmt"
 	"strconv"
+	"sync"
 )
 
 const (
 	STRING  = '+'
+	PANIC   = '-'
 	INTEGER = ':'
 	ARRAY   = '*'
 	BULK    = '$'
 )
 
-var Data map[string][]Value
+var Data = map[string]string{}
+var DataMutex = sync.RWMutex{}
 
 type Value struct {
 	typ     string
@@ -126,6 +129,17 @@ func (r *Resp) readArray() (Value, error) {
 	return val, nil
 }
 
-func (r *Resp) Write() {
+func set(args []Value) Value {
+	if len(args) == 0 {
+		return Value{typ: "error", str: "PANIC YOU ARE GOING TO DIE"}
+	}
 
+	key := args[0].bulk
+	val := args[0].bulk
+
+	DataMutex.Lock()
+	Data[key] = val
+	DataMutex.Unlock()
+
+	return Value{typ: "string", str: "OK"}
 }

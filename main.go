@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 func main() {
@@ -34,21 +35,26 @@ func Read(conn net.Conn) {
 		buf := bufio.NewReader(conn)
 		r := NewReader(buf)
 
-		b, err := buf.Peek(12)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		fmt.Println(string(b))
-
 		val, err := r.Read()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		fmt.Println(val)
+		if val.typ != "array" {
+			return
+		}
 
-		conn.Write([]byte(val.str))
+		command := strings.ToUpper(val.array[0].bulk)
+		args := val.array[1:]
+
+		fmt.Println(command)
+		fmt.Println(args)
+
+		if command == "SET" {
+			v := set(args)
+			conn.Write([]byte("+" + v.str + "\r\n"))
+		}
+
 	}
 }
