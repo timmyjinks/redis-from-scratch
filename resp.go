@@ -10,13 +10,17 @@ const (
 	STRING  = '+'
 	INTEGER = ':'
 	ARRAY   = '*'
+	BULK    = '$'
 )
+
+var Data map[string][]Value
 
 type Value struct {
 	typ     string
 	str     string
 	integer int
 	array   []Value
+	bulk    string
 }
 
 type Resp struct {
@@ -38,9 +42,33 @@ func (r *Resp) Read() (Value, error) {
 	switch typ {
 	case ARRAY:
 		return r.readArray()
+	case BULK:
+		return r.readBulk()
 	}
 
 	return Value{}, nil
+}
+
+func (r *Resp) readBulk() (Value, error) {
+	v := Value{}
+	v.typ = "array"
+
+	size, err := r.readInteger()
+	if err != nil {
+		return Value{}, nil
+	}
+
+	bulk := make([]byte, size)
+	r.reader.Read(bulk)
+
+	fmt.Println("size:", size)
+	fmt.Println("bulk:", string(bulk))
+
+	v.bulk = string(bulk)
+
+	r.readLine()
+
+	return v, nil
 }
 
 func (r *Resp) readLine() (line []byte, n int, err error) {
@@ -61,16 +89,16 @@ func (r *Resp) readLine() (line []byte, n int, err error) {
 		n += 1
 		line = append(line, b)
 	}
-	return line, 0, nil
+	return line, n, nil
 }
 
 func (r *Resp) readInteger() (int64, error) {
-	b, err := r.reader.ReadByte()
+	line, _, err := r.readLine()
 	if err != nil {
 		return 0, err
 	}
 
-	i64, err := strconv.ParseInt(string(b), 10, 64)
+	i64, err := strconv.ParseInt(string(line), 10, 64)
 	if err != nil {
 		return 0, err
 	}
@@ -80,23 +108,24 @@ func (r *Resp) readInteger() (int64, error) {
 
 func (r *Resp) readArray() (Value, error) {
 	val := Value{}
+	val.typ = "array"
+
 	size, err := r.readInteger()
 	if err != nil {
 		return Value{}, err
 	}
-	fmt.Println("size", size*2)
-	r.reader.ReadByte()
-	r.reader.ReadByte()
 
-	for range size * 2 {
-		line, _, err := r.readLine()
-		fmt.Println("l", string(line))
+	for range size {
+		v, err := r.Read()
 		if err != nil {
 			return Value{}, err
 		}
-		val.array = append(val.array, Value{str: string(line)})
+		val.array = append(val.array, v)
 	}
-	fmt.Println("end")
 
-	return Value{}, nil
+	return val, nil
+}
+
+func (r *Resp) Write() {
+
 }

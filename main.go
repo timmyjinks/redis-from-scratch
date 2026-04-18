@@ -49,6 +49,6 @@ func Read(conn net.Conn) {
 
 		fmt.Println(val)
 
-		conn.Write(fmt.Appendf([]byte(val.str), "+%s", val.str))
+		conn.Write([]byte(val.str))
 	}
 }
