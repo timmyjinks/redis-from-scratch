@@ -74,9 +74,6 @@ func (r *Resp) readBulk() (Value, error) {
 	bulk := make([]byte, size)
 	r.reader.Read(bulk)
 
-	fmt.Println("size:", size)
-	fmt.Println("bulk:", string(bulk))
-
 	v.bulk = string(bulk)
 
 	r.readLine()
@@ -172,7 +169,6 @@ func (v Value) marshalArray() []byte {
 	bytes = append(bytes, '\r', '\n')
 
 	for i := range len(v.array) {
-		fmt.Println("bulkkk", v.array[i])
 		bytes = append(bytes, v.array[i].Marshal()...)
 	}
 	return bytes
