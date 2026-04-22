@@ -1,6 +1,6 @@
 # redis-from-scratch
 
-A lightweight Redis server implementation written from scratch in Go. This project implements the core Redis communication protocol (RESP) and a subset of Redis commands over a raw TCP connection — no external dependencies required.
+A lightweight Redis server implementation written from scratch in Go. This project implements the core Redis communication protocol (RESP) and a subset of Redis commands over a raw TCP connection no external dependencies required.
 
 ## How It Works
 
