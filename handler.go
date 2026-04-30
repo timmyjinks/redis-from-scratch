@@ -12,7 +12,7 @@ func set(args []Value) Value {
 	}
 
 	key := args[0].bulk
-	val := args[0].bulk
+	val := args[1].bulk
 
 	DataMutex.Lock()
 	Data[key] = val
